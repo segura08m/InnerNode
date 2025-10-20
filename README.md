@@ -14,6 +14,7 @@ A cross-chain bridge allows users to transfer assets or data from a source block
 **`InnerNode` simulates the critical off-chain component (Steps 2 and 3)**. It listens for events on a source chain and submits an attestation to a simulated oracle network API for the destination chain.
 
 ### The Watched Event
+
 `InnerNode` is configured to listen for a specific event signature. For this simulation, it targets an event named `BridgeTransferInitiated`. A simplified version of this event in a Solidity smart contract might look like this:
 
 ```solidity
@@ -45,6 +46,7 @@ contract BridgeContract {
     }
 }
 ```
+
 The listener filters for this event and processes its arguments (`from`, `to`, `amount`, etc.) to build the attestation.
 
 ## Code Architecture
@@ -72,9 +74,9 @@ The script is designed with a clear separation of concerns, organized into sever
 
 The operational flow of the script is as follows:
 
-1.  **Initialization**: The main execution block (`if __name__ == "__main__":`) first creates an `InnerNodeConfig` instance to load the application settings. This configuration object is then used to initialize the `BridgeOrchestrator`.
-2.  **Start Service**: The `BridgeOrchestrator.run()` method is called.
-3.  **Connection**: The `ChainEventListener` attempts to connect to the configured RPC endpoint of the source chain.
+1.  **Initialization**: The main execution block (`if __name__ == "__main__":`) creates an `InnerNodeConfig` instance to load the application settings. This configuration object is then used to initialize the `BridgeOrchestrator`.
+2.  **Service Start**: The `BridgeOrchestrator.run()` method is called, which initiates the main service loop.
+3.  **Connection**: The `ChainEventListener` connects to the configured RPC endpoint of the source chain.
 4.  **Polling Loop**: The listener enters an infinite loop.
     a. It determines the range of blocks to scan, starting from the last processed block up to the latest block minus a confirmation delay (e.g., 6 blocks).
     b. It uses `web3.py` to query for `BridgeTransferInitiated` events within that block range.
@@ -83,10 +85,10 @@ The operational flow of the script is as follows:
 6.  **Callback Invocation**: The listener invokes the callback function provided by the `BridgeOrchestrator`, passing the processed event data.
 7.  **Attestation Submission**: The orchestrator's callback method (`handle_new_bridge_event`) receives the data and instructs the `CrossChainOracleClient` to submit it.
 8.  **API Call**: The `CrossChainOracleClient` formats a JSON payload and sends it via an HTTP POST request to the destination oracle's API endpoint.
-9.  **Logging**: The entire process, from finding an event to receiving an API response, is logged to the console for monitoring.
-10. **Repeat**: The listener waits for a configured polling interval (e.g., 15 seconds) and starts the loop again.
+9.  **Logging**: The entire process, from detecting an event to receiving an API response, is logged to the console for monitoring.
+10. **Repeat**: After a configured polling interval (e.g., 15 seconds), the listener wakes up and the polling loop repeats.
 
-## Usage Example
+## Usage
 
 ### 1. Setup
 
@@ -135,14 +137,42 @@ POLLING_INTERVAL_SECONDS=15
 BLOCK_CONFIRMATION_DELAY=6
 ```
 
-**Note**: You must replace `BRIDGE_CONTRACT_ADDRESS` with a real contract address that emits events with a matching signature for the listener to find anything.
+**Important**: For the listener to detect events, you must replace `BRIDGE_CONTRACT_ADDRESS` with the address of a real contract that emits a `BridgeTransferInitiated` event (or one with a matching signature).
 
-### 3. Running the Script
+### 3. Run the Listener
+
+The main script (`main.py`) ties all the components together. It loads the configuration, initializes the orchestrator, and starts the service. A typical entrypoint looks like this:
+
+```python
+# main.py
+import logging
+from config import InnerNodeConfig
+from orchestrator import BridgeOrchestrator
+
+# Basic logging setup
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - [%(levelname)s] - (%(name)s) - %(message)s'
+)
+log = logging.getLogger("Main")
+
+def main():
+    """Initializes and runs the bridge listener service."""
+    try:
+        config = InnerNodeConfig()
+        orchestrator = BridgeOrchestrator(config)
+        orchestrator.run()
+    except Exception as e:
+        log.critical(f"A fatal error occurred: {e}", exc_info=True)
+
+if __name__ == "__main__":
+    main()
+```
 
 Execute the script from your terminal:
 
 ```bash
-python script.py
+python main.py
 ```
 
 ### 4. Expected Output

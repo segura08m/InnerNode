@@ -8,18 +8,52 @@ A cross-chain bridge allows users to transfer assets or data from a source block
 
 1.  **Locking/Burning on Source Chain**: A user deposits assets into a smart contract on the source chain. This contract locks the assets and emits an event (e.g., `BridgeTransferInitiated`) containing details of the transfer.
 2.  **Off-Chain Validation**: A network of off-chain nodes (validators, oracles, or listeners) constantly monitors the source chain for these specific events.
-3.  **Attestation**: Upon detecting a valid event, each node independently creates a signed message, or "attestation," confirming the event occurred.
+3.  **Attestation**: Upon detecting a valid event, each node independently creates a signed message, or "attestation," confirming that the event occurred.
 4.  **Minting/Unlocking on Destination Chain**: These attestations are submitted to a smart contract on the destination chain. Once a sufficient number of attestations are collected, the contract mints or unlocks the equivalent assets for the user on the destination chain.
 
-**`InnerNode` simulates the critical off-chain component (Step 2 and 3)**. It listens for events on a source chain and submits an attestation to a simulated oracle network API for the destination chain.
+**`InnerNode` simulates the critical off-chain component (Steps 2 and 3)**. It listens for events on a source chain and submits an attestation to a simulated oracle network API for the destination chain.
+
+### The Watched Event
+`InnerNode` is configured to listen for a specific event signature. For this simulation, it targets an event named `BridgeTransferInitiated`. A simplified version of this event in a Solidity smart contract might look like this:
+
+```solidity
+contract BridgeContract {
+    // A unique identifier for each transfer
+    uint256 public nonce;
+
+    // Event emitted when a user initiates a cross-chain transfer
+    event BridgeTransferInitiated(
+        address indexed from,
+        address indexed to,
+        uint256 amount,
+        uint256 sourceChainId,
+        uint256 destinationChainId,
+        uint256 nonce
+    );
+
+    function bridgeAssets(address to, uint256 amount, uint256 destinationChainId) public payable {
+        // ... logic to lock assets ...
+        
+        emit BridgeTransferInitiated(
+            msg.sender,
+            to,
+            amount,
+            block.chainid,
+            destinationChainId,
+            nonce++
+        );
+    }
+}
+```
+The listener filters for this event and processes its arguments (`from`, `to`, `amount`, etc.) to build the attestation.
 
 ## Code Architecture
 
 The script is designed with a clear separation of concerns, organized into several key classes:
 
--   **`InnerNodeConfig`**: A dedicated configuration class that loads all necessary parameters from environment variables (using `.env` file). It centralizes settings like RPC URLs, contract addresses, and API keys, and performs basic validation on startup.
+-   **`InnerNodeConfig`**: A dedicated configuration class that loads all necessary parameters from environment variables (using a `.env` file). It centralizes settings like RPC URLs, contract addresses, and API keys, and performs basic validation on startup.
 
--   **`ChainEventListener`**: This is the core component that interacts with the source blockchain. 
+-   **`ChainEventListener`**: This is the core component that interacts with the source blockchain.
     -   It uses the `web3.py` library to connect to an Ethereum-compatible node.
     -   It initializes the bridge smart contract object using its address and ABI.
     -   Its main method, `listen_for_events`, runs in a continuous loop, polling the blockchain for new blocks and filtering for the target event (`BridgeTransferInitiated`).
@@ -27,7 +61,7 @@ The script is designed with a clear separation of concerns, organized into sever
 
 -   **`CrossChainOracleClient`**: This class simulates the interaction with the destination chain's oracle network.
     -   It uses the `requests` library to make authenticated HTTP POST requests to a simulated API endpoint.
-    -   The `submit_attestation` method formats the event data into a payload and sends it, handling potential network errors and bad API responses.
+    -   The `submit_attestation` method formats the event data into a payload and sends it, handling potential network errors and unsuccessful API responses.
 
 -   **`BridgeOrchestrator`**: This class acts as the central coordinator.
     -   It initializes instances of `ChainEventListener` and `CrossChainOracleClient`.
@@ -38,7 +72,7 @@ The script is designed with a clear separation of concerns, organized into sever
 
 The operational flow of the script is as follows:
 
-1.  **Initialization**: The main execution block (`if __name__ == "__main__":`) creates an instance of `InnerNodeConfig` and then the `BridgeOrchestrator`.
+1.  **Initialization**: The main execution block (`if __name__ == "__main__":`) first creates an `InnerNodeConfig` instance to load the application settings. This configuration object is then used to initialize the `BridgeOrchestrator`.
 2.  **Start Service**: The `BridgeOrchestrator.run()` method is called.
 3.  **Connection**: The `ChainEventListener` attempts to connect to the configured RPC endpoint of the source chain.
 4.  **Polling Loop**: The listener enters an infinite loop.
@@ -59,7 +93,7 @@ The operational flow of the script is as follows:
 First, clone the repository and navigate into the directory:
 
 ```bash
-git clone <your-repo-url>/InnerNode.git
+git clone https://github.com/your-username/InnerNode.git
 cd InnerNode
 ```
 

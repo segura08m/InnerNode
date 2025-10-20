@@ -1,15 +1,15 @@
 # InnerNode - Cross-Chain Bridge Event Listener
 
-This repository contains the source code for `InnerNode`, a Python-based simulation of a crucial component in a cross-chain bridge: the event listener and oracle attestation service. It is designed to be a robust, modular, and understandable example of how off-chain services interact with blockchain networks.
+This repository contains the source code for `InnerNode`, a Python-based simulation of a crucial component in a cross-chain bridge: an event listener and oracle attestation service. It is designed to be a robust, modular, and understandable example of how off-chain services interact with blockchain networks.
 
 ## Concept
 
-A cross-chain bridge allows users to transfer assets or data from a source blockchain (e.g., Ethereum) to a destination blockchain (e.g., Polygon). A common architecture for this involves:
+A cross-chain bridge allows users to transfer assets or data from a source blockchain (e.g., Ethereum) to a destination blockchain (e.g., Polygon). A common architecture for this involves several key steps:
 
 1.  **Locking/Burning on Source Chain**: A user deposits assets into a smart contract on the source chain. This contract locks the assets and emits an event (e.g., `BridgeTransferInitiated`) containing details of the transfer.
 2.  **Off-Chain Validation**: A network of off-chain nodes (validators, oracles, or listeners) constantly monitors the source chain for these specific events.
-3.  **Attestation**: Upon detecting a valid event, each node independently creates a signed message, or "attestation," confirming that the event occurred.
-4.  **Minting/Unlocking on Destination Chain**: These attestations are submitted to a smart contract on the destination chain. Once a sufficient number of attestations are collected, the contract mints or unlocks the equivalent assets for the user on the destination chain.
+3.  **Attestation**: Upon detecting a valid event, each node independently creates a signed message (an "attestation") confirming that the event occurred.
+4.  **Minting/Unlocking on Destination Chain**: These attestations are submitted to a smart contract on the destination chain. Once a sufficient number of attestations are collected, the contract mints or unlocks the corresponding assets for the user on the destination chain.
 
 **`InnerNode` simulates the critical off-chain component (Steps 2 and 3)**. It listens for events on a source chain and submits an attestation to a simulated oracle network API for the destination chain.
 
@@ -63,7 +63,7 @@ The script is designed with a clear separation of concerns, organized into sever
 
 -   **`CrossChainOracleClient`**: This class simulates the interaction with the destination chain's oracle network.
     -   It uses the `requests` library to make authenticated HTTP POST requests to a simulated API endpoint.
-    -   The `submit_attestation` method formats the event data into a payload and sends it, handling potential network errors and unsuccessful API responses.
+    -   The `submit_attestation` method formats the event data into a payload and sends it, handling potential network errors and non-successful API responses.
 
 -   **`BridgeOrchestrator`**: This class acts as the central coordinator.
     -   It initializes instances of `ChainEventListener` and `CrossChainOracleClient`.
@@ -74,7 +74,7 @@ The script is designed with a clear separation of concerns, organized into sever
 
 The operational flow of the script is as follows:
 
-1.  **Initialization**: The main execution block (`if __name__ == "__main__":`) creates an `InnerNodeConfig` instance to load the application settings. This configuration object is then used to initialize the `BridgeOrchestrator`.
+1.  **Initialization**: The script's entry point (`if __name__ == "__main__":`) creates an `InnerNodeConfig` instance to load the application settings. This configuration object is then used to initialize the `BridgeOrchestrator`.
 2.  **Service Start**: The `BridgeOrchestrator.run()` method is called, which initiates the main service loop.
 3.  **Connection**: The `ChainEventListener` connects to the configured RPC endpoint of the source chain.
 4.  **Polling Loop**: The listener enters an infinite loop.
@@ -139,37 +139,9 @@ BLOCK_CONFIRMATION_DELAY=6
 
 **Important**: For the listener to detect events, you must replace `BRIDGE_CONTRACT_ADDRESS` with the address of a real contract that emits a `BridgeTransferInitiated` event (or one with a matching signature).
 
-### 3. Run the Listener
+### 3. Run the Application
 
-The main script (`main.py`) ties all the components together. It loads the configuration, initializes the orchestrator, and starts the service. A typical entrypoint looks like this:
-
-```python
-# main.py
-import logging
-from config import InnerNodeConfig
-from orchestrator import BridgeOrchestrator
-
-# Basic logging setup
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - [%(levelname)s] - (%(name)s) - %(message)s'
-)
-log = logging.getLogger("Main")
-
-def main():
-    """Initializes and runs the bridge listener service."""
-    try:
-        config = InnerNodeConfig()
-        orchestrator = BridgeOrchestrator(config)
-        orchestrator.run()
-    except Exception as e:
-        log.critical(f"A fatal error occurred: {e}", exc_info=True)
-
-if __name__ == "__main__":
-    main()
-```
-
-Execute the script from your terminal:
+Once configured, you can start the service by running the main script from your terminal.
 
 ```bash
 python main.py
@@ -177,7 +149,7 @@ python main.py
 
 ### 4. Expected Output
 
-The script will start logging its activities to the console. You should see output similar to this:
+The script will start logging its activities to the console. When it detects an event on the source chain, you should see output similar to this:
 
 ```
 2023-10-27 14:30:00 - [INFO] - (InnerNodeConfig) - Configuration validated successfully.

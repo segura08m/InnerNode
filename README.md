@@ -63,7 +63,7 @@ The script is designed with a clear separation of concerns, organized into sever
 
 -   **`CrossChainOracleClient`**: This class simulates the interaction with the destination chain's oracle network.
     -   It uses the `requests` library to make authenticated HTTP POST requests to a simulated API endpoint.
-    -   The `submit_attestation` method formats the event data into a payload and sends it, handling potential network errors and non-successful API responses.
+    -   The `submit_attestation` method formats the event data into a payload and sends it, handling potential network errors and unsuccessful API responses.
 
 -   **`BridgeOrchestrator`**: This class acts as the central coordinator.
     -   It initializes instances of `ChainEventListener` and `CrossChainOracleClient`.
@@ -103,7 +103,7 @@ It is highly recommended to use a Python virtual environment:
 
 ```bash
 python -m venv venv
-source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+source venv/bin/activate  # On Windows, use venv\Scripts\activate
 ```
 
 Install the required dependencies:
@@ -114,11 +114,10 @@ pip install -r requirements.txt
 
 ### 2. Configuration
 
-Create a file named `.env` in the root of the project directory. This file will store your configuration secrets. Populate it with the following variables:
+Create a file named `.env` in the root of the project directory. This file will store your configuration secrets. Populate it with the following variables, replacing the placeholder values with your own:
 
 ```dotenv
-# URL for the source chain's RPC node (e.g., Infura, Alchemy, or your own node)
-# Using public Sepolia testnet RPC as default
+# URL for the source chain's RPC node (e.g., from Infura, Alchemy, or a personal node)
 SOURCE_CHAIN_RPC_URL="https://rpc.sepolia.org"
 
 # The address of the bridge contract you want to monitor
@@ -141,7 +140,7 @@ BLOCK_CONFIRMATION_DELAY=6
 
 ### 3. Run the Application
 
-Once configured, you can start the service by running the main script from your terminal.
+Once configured, you can start the service by running the main script from your terminal. The script will immediately attempt to connect to the source chain's RPC and begin polling for events according to your configuration.
 
 ```bash
 python main.py

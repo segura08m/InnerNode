@@ -11,7 +11,7 @@ A cross-chain bridge allows users to transfer assets or data from a source block
 3.  **Attestation**: Upon detecting a valid event, each node independently creates a signed message (an "attestation") confirming that the event occurred.
 4.  **Minting/Unlocking on Destination Chain**: These attestations are submitted to a smart contract on the destination chain. Once a sufficient number of attestations are collected, the contract mints or unlocks the corresponding assets for the user on the destination chain.
 
-**`InnerNode` simulates the critical off-chain component (Steps 2 and 3)**. It listens for events on a source chain and submits an attestation to a simulated oracle network API for the destination chain.
+**`InnerNode` simulates the critical off-chain component (Steps 2 and 3)**. It listens for events on a source chain and submits an attestation to an API endpoint representing the destination chain's oracle network.
 
 ### The Watched Event
 
@@ -142,6 +142,24 @@ BLOCK_CONFIRMATION_DELAY=6
 
 Once configured, you can start the service by running the `main.py` script from your terminal. The script will connect to the source chain's RPC and begin polling for new events.
 
+The entry point in `main.py` bootstraps the application:
+```python
+# main.py
+if __name__ == "__main__":
+    try:
+        # Load configuration from .env and validate
+        config = InnerNodeConfig()
+        
+        # Initialize and run the main orchestrator
+        orchestrator = BridgeOrchestrator(config)
+        orchestrator.run()
+        
+    except Exception as e:
+        logger.error(f"A critical error occurred: {e}")
+        sys.exit(1)
+```
+
+Run the application with:
 ```bash
 python main.py
 ```

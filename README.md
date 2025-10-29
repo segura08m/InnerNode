@@ -4,7 +4,7 @@ This repository contains the source code for `InnerNode`, a Python-based simulat
 
 ## Concept
 
-A cross-chain bridge allows users to transfer assets or data from a source blockchain (e.g., Ethereum) to a destination blockchain (e.g., Polygon). A common architecture for this involves several key steps:
+A cross-chain bridge allows users to transfer assets or data from a source blockchain (e.g., Ethereum) to a destination blockchain (e.g., Polygon). This process typically involves several key steps:
 
 1.  **Locking/Burning on Source Chain**: A user deposits assets into a smart contract on the source chain. This contract locks the assets and emits an event (e.g., `BridgeTransferInitiated`) containing details of the transfer.
 2.  **Off-Chain Validation**: A network of off-chain nodes (validators, oracles, or listeners) constantly monitors the source chain for these specific events.
@@ -53,12 +53,12 @@ The listener filters for this event and processes its arguments (`from`, `to`, `
 
 The script is designed with a clear separation of concerns, organized into several key classes:
 
--   **`InnerNodeConfig`**: A dedicated configuration class that loads all necessary parameters from environment variables (using a `.env` file). It centralizes settings like RPC URLs, contract addresses, and API keys, and performs basic validation on startup.
+-   **`InnerNodeConfig`**: A dedicated configuration class that loads all necessary parameters from environment variables (using a `.env` file). It centralizes settings like RPC URLs, contract addresses, and API keys and performs basic validation on startup.
 
 -   **`ChainEventListener`**: This is the core component that interacts with the source blockchain.
     -   It uses the `web3.py` library to connect to an Ethereum-compatible node.
     -   It initializes the bridge smart contract object using its address and ABI.
-    -   Its main method, `listen_for_events`, runs in a continuous loop, polling the blockchain for new blocks and filtering for the target event (`BridgeTransferInitiated`).
+    -   Its main method, `listen_for_events`, runs in a loop, polling the blockchain for new blocks and filtering for the target event (`BridgeTransferInitiated`).
     -   It includes logic to handle block confirmations to reduce the risk of processing events from chain reorganizations.
 
 -   **`CrossChainOracleClient`**: This class simulates the interaction with the destination chain's oracle network.
@@ -74,10 +74,10 @@ The script is designed with a clear separation of concerns, organized into sever
 
 The operational flow of the script is as follows:
 
-1.  **Initialization**: The script's entry point (`if __name__ == "__main__":`) creates an `InnerNodeConfig` instance to load the application settings. This configuration object is then used to initialize the `BridgeOrchestrator`.
+1.  **Initialization**: When the script starts, the entry point (`if __name__ == "__main__":`) creates an `InnerNodeConfig` instance to load the application settings. This configuration object is then used to initialize the `BridgeOrchestrator`.
 2.  **Service Start**: The `BridgeOrchestrator.run()` method is called, which initiates the main service loop.
 3.  **Connection**: The `ChainEventListener` connects to the configured RPC endpoint of the source chain.
-4.  **Polling Loop**: The listener enters an infinite loop where it:
+4.  **Polling Loop**: The listener enters a loop where it:
     a. Determines the range of blocks to scan, starting from the last processed block up to the latest block minus a confirmation delay (e.g., 6 blocks).
     b. Uses `web3.py` to query for `BridgeTransferInitiated` events within that block range.
     c. Iterates through any events that are found.
@@ -164,7 +164,7 @@ Run the application from your terminal:
 python main.py
 ```
 
-The application is designed for continuous operation. To stop the service, press `Ctrl+C` in the terminal. The script includes graceful shutdown logic to handle this.
+The application is designed to run continuously. To stop the service, press `Ctrl+C` in the terminal. The script includes graceful shutdown logic to handle this.
 
 ### 4. Expected Output
 

@@ -53,7 +53,7 @@ The listener filters for this event and processes its arguments (`from`, `to`, `
 
 The script is designed with a clear separation of concerns, organized into several key classes:
 
--   **`InnerNodeConfig`**: A dedicated configuration class that loads all necessary parameters from environment variables (using a `.env` file). It centralizes settings like RPC URLs, contract addresses, and API keys, and performs basic validation on startup.
+-   **`InnerNodeConfig`**: A dedicated configuration class that loads all necessary parameters from environment variables (using a `.env` file). It centralizes settings like RPC URLs, contract addresses, and API keys and performs basic validation on startup.
 
 -   **`ChainEventListener`**: This is the core component that interacts with the source blockchain.
     -   It uses the `web3.py` library to connect to an Ethereum-compatible node.
@@ -65,7 +65,7 @@ The script is designed with a clear separation of concerns, organized into sever
     -   It uses the `requests` library to make authenticated HTTP POST requests to a simulated API endpoint.
     -   The `submit_attestation` method formats the event data into a payload and sends it, handling potential network errors and unsuccessful API responses.
 
--   **`BridgeOrchestrator`**: This class acts as the central coordinator.
+-   **`BridgeOrchestrator`**: This class acts as the central coordinator, tying the `ChainEventListener` and `CrossChainOracleClient` together.
     -   It initializes instances of `ChainEventListener` and `CrossChainOracleClient`.
     -   It provides a callback function (`handle_new_bridge_event`) which is passed to the listener. This decouples the listener from the oracle client; the listener's only job is to find events, and the orchestrator decides what to do with them.
     -   The `run()` method starts the entire process and includes top-level error handling and graceful shutdown logic (e.g., on `Ctrl+C`).
@@ -140,11 +140,13 @@ BLOCK_CONFIRMATION_DELAY=6
 
 ### 3. Run the Application
 
-Once configured, you can start the service by running the main script from your terminal. The script will immediately attempt to connect to the source chain's RPC and begin polling for events according to your configuration.
+Once configured, you can start the service by running the `main.py` script from your terminal. The script will connect to the source chain's RPC and begin polling for new events.
 
 ```bash
 python main.py
 ```
+
+The application is designed for continuous operation. To stop the service, press `Ctrl+C` in the terminal. The script includes graceful shutdown logic to handle this.
 
 ### 4. Expected Output
 
